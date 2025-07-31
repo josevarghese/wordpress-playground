@@ -56,19 +56,25 @@ const LibraryExample = {
 
 			// The files from the preload directory are preloaded using the
 			// auto_prepend_file php.ini directive.
-			FS.mkdir('/internal/shared/preload');
+			FS.mkdirTree('/internal/shared/preload');
 			// Platform-level bin directory for a fallback `php` binary. Without it,
 			// PHP may not populate the PHP_BINARY constant.
-			FS.mkdir('/internal/shared/bin');
+			FS.mkdirTree('/internal/shared/bin');
 			const originalOnRuntimeInitialized = Module['onRuntimeInitialized'];
 			Module['onRuntimeInitialized'] = () => {
-				// Dummy PHP binary for PHP to populate the PHP_BINARY constant.
-				FS.writeFile(
+				const { node: phpBinaryNode } = FS.lookupPath(
 					'/internal/shared/bin/php',
-					new TextEncoder().encode('#!/bin/sh\nphp "$@"')
+					{ noent_okay: true },
 				);
-				// It must be executable to be used by PHP.
-				FS.chmod('/internal/shared/bin/php', 0o755);
+				if (!phpBinaryNode) {
+					// Dummy PHP binary for PHP to populate the PHP_BINARY constant.
+					FS.writeFile(
+						'/internal/shared/bin/php',
+						new TextEncoder().encode('#!/bin/sh\nphp "$@"')
+					);
+					// It must be executable to be used by PHP.
+					FS.chmod('/internal/shared/bin/php', 0o755);
+				}
 				originalOnRuntimeInitialized();
 			};
 

@@ -10,7 +10,7 @@
 const LibraryExample = {
 	// Emscripten dependencies:
 	$PHPWASM__deps: ['$allocateUTF8OnStack'],
-	$PHPWASM__postset: 'PHPWASM.init();',
+	$PHPWASM__postset: 'PHPWASM.init(PHPLoader?.phpWasmInitOptions);',
 
 	// Functions not exposed to C but available in the generated
 	// JavaScript library under the PHPWASM object:
@@ -28,7 +28,7 @@ const LibraryExample = {
 		// emscripten_O_NDELAY |
 		// emscripten_O_DIRECT |
 		// emscripten_O_NOATIME
-		init: function () {
+		init: function (phpWasmInitOptions) {
 			Module['ENV'] = Module['ENV'] || {};
 			// Ensure a platform-level bin directory for a fallback `php` binary.
 			Module['ENV']['PATH'] = [
@@ -42,9 +42,18 @@ const LibraryExample = {
 			// stdout, stderr, and headers information are written for the JavaScript
 			// code to read later on.
 			FS.mkdir('/internal');
-			// The files from the shared directory are shared between all the
+			// The files from the shared directory are shared between all th
 			// PHP processes managed by PHPProcessManager.
 			FS.mkdir('/internal/shared');
+
+			if (phpWasmInitOptions?.nativeInternalDirPath) {
+				FS.mount(
+					FS.filesystems.NODEFS,
+					{ root: phpWasmInitOptions.nativeInternalDirPath },
+					'/internal/shared'
+				);
+			}
+
 			// The files from the preload directory are preloaded using the
 			// auto_prepend_file php.ini directive.
 			FS.mkdir('/internal/shared/preload');

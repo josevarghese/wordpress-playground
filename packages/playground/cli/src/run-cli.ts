@@ -48,6 +48,7 @@ import { resolveBlueprint } from './resolve-blueprint';
 import { BlueprintsV2Handler } from './blueprints-v2/blueprints-v2-handler';
 import { BlueprintsV1Handler } from './blueprints-v1/blueprints-v1-handler';
 import { startBridge } from '@php-wasm/xdebug-bridge';
+import { dir as tmpDir } from 'tmp-promise';
 
 export async function parseOptionsAndRunCLI() {
 	try {
@@ -444,10 +445,13 @@ export async function runCLI(args: RunCLIArgs): Promise<RunCLIServer> {
 					fileLockManager
 				);
 
+				const nativeInternalDirPath = (await tmpDir()).path;
+
 				// Boot the primary worker using the handler
 				playground = await handler.bootPrimaryWorker(
 					initialWorker.phpPort,
-					fileLockManagerPort
+					fileLockManagerPort,
+					nativeInternalDirPath
 				);
 				playgroundsToCleanUp.push({
 					playground,
@@ -489,17 +493,18 @@ export async function runCLI(args: RunCLIArgs): Promise<RunCLIServer> {
 				) {
 					logger.log(`Preparing additional workers...`);
 
-					// Save /internal directory from initial worker so we can replicate it
-					// in each additional worker.
-					const internalZip = await zipDirectory(
-						playground,
-						'/internal'
-					);
+					// // Save /internal directory from initial worker so we can replicate it
+					// // in each additional worker.
+					// const internalZip = await zipDirectory(
+					// 	playground,
+					// 	'/internal'
+					// );
 
 					// Boot additional workers using the handler
 					const initialWorkerProcessIdSpace = processIdSpaceLength;
 					await Promise.all(
 						additionalWorkers.map(async (worker, index) => {
+							console.error('worker', index);
 							const firstProcessId =
 								initialWorkerProcessIdSpace +
 								index * processIdSpaceLength;
@@ -512,6 +517,7 @@ export async function runCLI(args: RunCLIArgs): Promise<RunCLIServer> {
 									worker,
 									fileLockManagerPort,
 									firstProcessId,
+									nativeInternalDirPath,
 								});
 
 							playgroundsToCleanUp.push({
@@ -519,19 +525,19 @@ export async function runCLI(args: RunCLIArgs): Promise<RunCLIServer> {
 								worker: worker.worker,
 							});
 
-							// Replicate the Blueprint-initialized /internal directory
-							await additionalPlayground.writeFile(
-								'/tmp/internal.zip',
-								internalZip
-							);
-							await unzipFile(
-								additionalPlayground,
-								'/tmp/internal.zip',
-								'/internal'
-							);
-							await additionalPlayground.unlink(
-								'/tmp/internal.zip'
-							);
+							// // Replicate the Blueprint-initialized /internal directory
+							// await additionalPlayground.writeFile(
+							// 	'/tmp/internal.zip',
+							// 	internalZip
+							// );
+							// await unzipFile(
+							// 	additionalPlayground,
+							// 	'/tmp/internal.zip',
+							// 	'/internal'
+							// );
+							// await additionalPlayground.unlink(
+							// 	'/tmp/internal.zip'
+							// );
 
 							loadBalancer.addWorker(additionalPlayground);
 						})

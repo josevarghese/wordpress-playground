@@ -55,7 +55,8 @@ export class BlueprintsV1Handler {
 
 	async bootPrimaryWorker(
 		phpPort: NodeMessagePort,
-		fileLockManagerPort: NodeMessagePort
+		fileLockManagerPort: NodeMessagePort,
+		nativeInternalDirPath: string
 	) {
 		const compiledBlueprint = await this.compileInputBlueprint(
 			this.args['additional-blueprint-steps'] || []
@@ -149,6 +150,7 @@ export class BlueprintsV1Handler {
 			trace,
 			internalCookieStore: this.args.internalCookieStore,
 			withXdebug: this.args.xdebug,
+			nativeInternalDirPath,
 		});
 
 		if (
@@ -171,10 +173,12 @@ export class BlueprintsV1Handler {
 		worker,
 		fileLockManagerPort,
 		firstProcessId,
+		nativeInternalDirPath,
 	}: {
 		worker: SpawnedWorker;
 		fileLockManagerPort: NodeMessagePort;
 		firstProcessId: number;
+		nativeInternalDirPath: string;
 	}) {
 		const additionalPlayground = consumeAPI<PlaygroundCliBlueprintV1Worker>(
 			worker.phpPort
@@ -202,6 +206,7 @@ export class BlueprintsV1Handler {
 			//        will have a separate cookie store.
 			internalCookieStore: this.args.internalCookieStore,
 			withXdebug: this.args.xdebug,
+			nativeInternalDirPath,
 		});
 		await additionalPlayground.isReady();
 		return additionalPlayground;

@@ -44,6 +44,7 @@ export type WorkerBootOptions = {
 	 */
 	internalCookieStore?: boolean;
 	withXdebug?: boolean;
+	nativeInternalDirPath?: string;
 };
 
 /**
@@ -117,6 +118,7 @@ export class PlaygroundCliBlueprintV1Worker extends PHPWorker {
 		trace,
 		internalCookieStore,
 		withXdebug,
+		nativeInternalDirPath,
 	}: WorkerBootOptions) {
 		if (this.booted) {
 			throw new Error('Playground already booted');
@@ -151,6 +153,9 @@ export class PlaygroundCliBlueprintV1Worker extends PHPWorker {
 							fileLockManager: this.fileLockManager!,
 							processId,
 							trace: trace ? tracePhpWasm : undefined,
+							phpWasmInitOptions: {
+								nativeInternalDirPath,
+							},
 						},
 						followSymlinks,
 						withXdebug,

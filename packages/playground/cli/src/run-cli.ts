@@ -15,11 +15,7 @@ import type {
 	BlueprintDeclaration,
 } from '@wp-playground/blueprints';
 import { runBlueprintSteps } from '@wp-playground/blueprints';
-import {
-	RecommendedPHPVersion,
-	unzipFile,
-	zipDirectory,
-} from '@wp-playground/common';
+import { RecommendedPHPVersion } from '@wp-playground/common';
 import fs from 'fs';
 import type { Server } from 'http';
 import { MessageChannel as NodeMessageChannel, Worker } from 'worker_threads';
@@ -493,13 +489,6 @@ export async function runCLI(args: RunCLIArgs): Promise<RunCLIServer> {
 				) {
 					logger.log(`Preparing additional workers...`);
 
-					// // Save /internal directory from initial worker so we can replicate it
-					// // in each additional worker.
-					// const internalZip = await zipDirectory(
-					// 	playground,
-					// 	'/internal'
-					// );
-
 					// Boot additional workers using the handler
 					const initialWorkerProcessIdSpace = processIdSpaceLength;
 					await Promise.all(
@@ -524,20 +513,6 @@ export async function runCLI(args: RunCLIArgs): Promise<RunCLIServer> {
 								playground: additionalPlayground,
 								worker: worker.worker,
 							});
-
-							// // Replicate the Blueprint-initialized /internal directory
-							// await additionalPlayground.writeFile(
-							// 	'/tmp/internal.zip',
-							// 	internalZip
-							// );
-							// await unzipFile(
-							// 	additionalPlayground,
-							// 	'/tmp/internal.zip',
-							// 	'/internal'
-							// );
-							// await additionalPlayground.unlink(
-							// 	'/tmp/internal.zip'
-							// );
 
 							loadBalancer.addWorker(additionalPlayground);
 						})

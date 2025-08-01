@@ -8,7 +8,7 @@ import path from 'path';
 
 const dependencyFilename = path.join(__dirname, '7_2_34', 'php_7_2.wasm');
 export { dependencyFilename };
-export const dependenciesTotalSize = 29379142;
+export const dependenciesTotalSize = 29379158;
 const phpVersionString = '7.2.34';
 export function init(RuntimeName, PHPLoader) {
 	// The rest of the code comes from the built php.js file and esm-suffix.js
@@ -6691,7 +6691,7 @@ export function init(RuntimeName, PHPLoader) {
 		O_NONBLOCK: 2048,
 		POLLHUP: 16,
 		SETFL_MASK: 3072,
-		init: function () {
+		init: function (phpWasmInitOptions) {
 			Module['ENV'] = Module['ENV'] || {};
 			// Ensure a platform-level bin directory for a fallback `php` binary.
 			Module['ENV']['PATH'] = [
@@ -6705,24 +6705,39 @@ export function init(RuntimeName, PHPLoader) {
 			// stdout, stderr, and headers information are written for the JavaScript
 			// code to read later on.
 			FS.mkdir('/internal');
-			// The files from the shared directory are shared between all the
+			// The files from the shared directory are shared between all th
 			// PHP processes managed by PHPProcessManager.
 			FS.mkdir('/internal/shared');
+
+			if (phpWasmInitOptions?.nativeInternalDirPath) {
+				FS.mount(
+					FS.filesystems.NODEFS,
+					{ root: phpWasmInitOptions.nativeInternalDirPath },
+					'/internal/shared'
+				);
+			}
+
 			// The files from the preload directory are preloaded using the
 			// auto_prepend_file php.ini directive.
-			FS.mkdir('/internal/shared/preload');
+			FS.mkdirTree('/internal/shared/preload');
 			// Platform-level bin directory for a fallback `php` binary. Without it,
 			// PHP may not populate the PHP_BINARY constant.
-			FS.mkdir('/internal/shared/bin');
+			FS.mkdirTree('/internal/shared/bin');
 			const originalOnRuntimeInitialized = Module['onRuntimeInitialized'];
 			Module['onRuntimeInitialized'] = () => {
-				// Dummy PHP binary for PHP to populate the PHP_BINARY constant.
-				FS.writeFile(
+				const { node: phpBinaryNode } = FS.lookupPath(
 					'/internal/shared/bin/php',
-					new TextEncoder().encode('#!/bin/sh\nphp "$@"')
+					{ noent_okay: true }
 				);
-				// It must be executable to be used by PHP.
-				FS.chmod('/internal/shared/bin/php', 0o755);
+				if (!phpBinaryNode) {
+					// Dummy PHP binary for PHP to populate the PHP_BINARY constant.
+					FS.writeFile(
+						'/internal/shared/bin/php',
+						new TextEncoder().encode('#!/bin/sh\nphp "$@"')
+					);
+					// It must be executable to be used by PHP.
+					FS.chmod('/internal/shared/bin/php', 0o755);
+				}
 				originalOnRuntimeInitialized();
 			};
 
@@ -32034,7 +32049,7 @@ export function init(RuntimeName, PHPLoader) {
 	if (ENVIRONMENT_IS_NODE) {
 		NODEFS.staticInit();
 	}
-	PHPWASM.init();
+	PHPWASM.init(PHPLoader?.phpWasmInitOptions);
 
 	Module['requestAnimationFrame'] = MainLoop.requestAnimationFrame;
 	Module['pauseMainLoop'] = MainLoop.pause;
@@ -32100,13 +32115,13 @@ export function init(RuntimeName, PHPLoader) {
 	// End JS library code
 
 	var ASM_CONSTS = {
-		10409405: ($0) => {
+		10409421: ($0) => {
 			if (!$0) {
 				AL.alcErr = 0xa004;
 				return 1;
 			}
 		},
-		10409453: ($0) => {
+		10409469: ($0) => {
 			if (!AL.currentCtx) {
 				err('alGetProcAddress() called without a valid context');
 				return 1;

@@ -42,7 +42,8 @@ export class BlueprintsV2Handler {
 
 	async bootPrimaryWorker(
 		phpPort: NodeMessagePort,
-		fileLockManagerPort: NodeMessagePort
+		fileLockManagerPort: NodeMessagePort,
+		nativeInternalDirPath: string
 	) {
 		const playground: RemoteAPI<PlaygroundCliBlueprintV2Worker> =
 			consumeAPI(phpPort);
@@ -57,6 +58,7 @@ export class BlueprintsV2Handler {
 			processIdSpaceLength: this.processIdSpaceLength,
 			trace: this.args.debug || false,
 			blueprint: this.args.blueprint!,
+			nativeInternalDirPath,
 		};
 
 		await playground.bootAsPrimaryWorker(workerBootArgs);
@@ -67,10 +69,12 @@ export class BlueprintsV2Handler {
 		worker,
 		fileLockManagerPort,
 		firstProcessId,
+		nativeInternalDirPath,
 	}: {
 		worker: SpawnedWorker;
 		fileLockManagerPort: NodeMessagePort;
 		firstProcessId: number;
+		nativeInternalDirPath: string;
 	}) {
 		const playground: RemoteAPI<PlaygroundCliBlueprintV2Worker> =
 			consumeAPI(worker.phpPort);
@@ -85,6 +89,7 @@ export class BlueprintsV2Handler {
 			processIdSpaceLength: this.processIdSpaceLength,
 			trace: this.args.debug || false,
 			blueprint: this.args.blueprint!,
+			nativeInternalDirPath,
 		};
 
 		await playground.bootAsSecondaryWorker(workerBootArgs);

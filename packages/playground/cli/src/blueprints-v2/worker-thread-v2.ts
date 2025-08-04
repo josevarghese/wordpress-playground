@@ -111,6 +111,7 @@ export type WorkerBootArgs = RunCLIArgs & {
 	processIdSpaceLength: number;
 	trace: boolean;
 	blueprint: BlueprintV2Declaration | ParsedBlueprintV2Declaration;
+	nativeInternalDirPath: string;
 };
 
 type WorkerRunBlueprintArgs = RunCLIArgs & {
@@ -125,6 +126,7 @@ interface WorkerBootRequestHandlerOptions {
 	firstProcessId: number;
 	processIdSpaceLength: number;
 	trace: boolean;
+	nativeInternalDirPath: string;
 }
 
 export class PlaygroundCliBlueprintV2Worker extends PHPWorker {
@@ -342,6 +344,7 @@ export class PlaygroundCliBlueprintV2Worker extends PHPWorker {
 		firstProcessId,
 		processIdSpaceLength,
 		trace,
+		nativeInternalDirPath,
 	}: WorkerBootRequestHandlerOptions) {
 		if (this.booted) {
 			throw new Error('Playground already booted');
@@ -378,6 +381,9 @@ export class PlaygroundCliBlueprintV2Worker extends PHPWorker {
 							trace: trace ? tracePhpWasm : undefined,
 							ENV: {
 								DOCROOT: '/wordpress',
+							},
+							phpWasmInitOptions: {
+								nativeInternalDirPath,
 							},
 						},
 						followSymlinks: allow?.includes('follow-symlinks'),
